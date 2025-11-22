@@ -1,83 +1,70 @@
-use std::error::Error;
-use thirtyfour::prelude::*;
-use tokio::{io::AsyncWriteExt, fs::File, time::*};
-use serde::Serialize;
-
-
-#[derive(Serialize)]
-struct Product{
-    name : String,
-    price : String,
-}
-
-impl Product{
-    fn default_new() ->Self {
-        Product { 
-            name: String::from(""), 
-            price: String::from("") 
-        }
-    }
-}
-
+use std::{error::Error, io::{self, Write}};
+use tokio;
+use clearscreen::clear;
+use scrap_lib::scrap::{ScrapComplete, scrap};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    // Manipulando o browser
-    let caps = DesiredCapabilities::firefox();
-    // local host do geckodriver
-    let driver = WebDriver::new("http://localhost:4444", caps).await?;
-    // Indo para o mercado livre
-    driver.goto("https://www.mercadolivre.com.br/").await?;
-    // Encontrando a área de busca
-    let elem_form = driver.find(By::ClassName("nav-search")).await?;
-    // Encontrando dentro da área de busca a área de input
-    let element_key = elem_form.find(By::ClassName("nav-search-input")).await?;
-    // Escrevendo na área de input "notebooks"
-    element_key.send_keys("notebooks").await?;
-    // Apertando o butão de confirmação de pesquisa
-    let elem_button = elem_form.find(By::Css("button[type='submit']")).await?;
-    elem_button.click().await?;
-    let mut vec_products : Vec<Product> = Vec::new();
-    driver.query(By::Css(".ui-search-layout")).first().await?;
-    let element_cookie = driver.find(By::ClassName("cookie-consent-banner-opt-out__actions")).await?;
-    let element_cookie_button = element_cookie.find(By::Css("button[class='cookie-consent-banner-opt-out__action cookie-consent-banner-opt-out__action--primary cookie-consent-banner-opt-out__action--key-accept']"))
-        .await?;
-    element_cookie_button.click().await?;
-    // pegando os nomes dos notebooks
+    // interface básica
     loop{
-        // verificando o carregamento do site
-        driver.query(By::Css(".ui-search-layout")).first().await?;
-        
-        // encontrando o card dos produtos
-        let notebook_cards = driver.find_all(By::ClassName("poly-card__content")).await?;
-        for card in notebook_cards{
-            let mut  product = Product::default_new();
-            // pegando o preço dentro do card
-            let price =  card.find(By::ClassName("andes-money-amount__fraction")).await?;
-            // pegando o nome do produto dentro do card
-            let name = card.find(By::ClassName("poly-component__title-wrapper")).await?;
-            product.name = name.text().await?;
-            product.price = price.text().await?;
-            vec_products.push(product);
+        let mut command = String::new();
+        println!("Commands : scrap <product> | help | clear | exit");
+        print!(">");
+        io::stdout().flush().expect("erro");
+        io::stdin()
+            .read_line(&mut command)
+            .expect("erro");
+        let command : Vec<&str> = command.split_whitespace().collect();
+        match command.as_slice(){
+            [command_, product] => {
+                match *command_{
+                    "scrap" => {
+                        match scrap(&*product.trim().to_lowercase()).await{
+                            Ok(state) => {
+                                match state {
+                                    ScrapComplete::DriveErro => eprintln!("Error: Failed to initialize the driver."),  
+                                    ScrapComplete::ScrapComplete => println!("The scrap was successfully completed."),   
+                                };
+                            },
+                            Err(erro) => {
+                                eprintln!("Error: Failed to complete scraping operation. Reason: {}", erro.to_string());
+                            },
+                        }
+                    },
+                    _ => println!("Unknown command: '{}'. Type 'help' for available commands.", *command_),
+                }
+            },
+            [command_] => {
+                match *command_{
+                    "help" => {
+                        println!("\n=== HELP - Web Scraper (Study Project) ===");
+                        println!("This program uses browser automation (GeckoDriver) to collect data.");
+                        println!("---------------------------------------------------------------------");
+                        println!("AVAILABLE COMMANDS:");
+                        println!("  scrap <product>  : Starts Firefox, searches for the product, collects");
+                        println!("                     Name and Price from all pages, and saves them");
+                        println!("                     to a local JSON file.");
+                        println!("  clear            : Clears the terminal screen.");
+                        println!("  help             : Displays this help message.");
+                        println!("  exit             : Exits the application.");
+                        println!("---------------------------------------------------------------------");
+                        println!("NOTE: Sleep delays are currently used to handle page loading.");
+                        println!("      The output file will be named 'product_name.json'.\n");
+                    }
+                    "clear" => {
+                        match clear(){
+                            Err(_) => eprintln!("Error: Failed to clear the terminal screen."),
+                            _ => (),
+                        };
+                    },
+                    "exit" => {
+                        break;
+                    }
+                    _ => println!("")
+                }
+            },
+            _ =>  println!("Unknown command: Type 'help' for available commands."),
         }
-        let form_button = match  driver.find(By::Css("li[class='andes-pagination__button andes-pagination__button--next']")).await{
-            Ok(element) => element,
-            Err(_) => break,
-        };
-        form_button.scroll_into_view().await?;
-        tokio::time::sleep(Duration::from_secs(1)).await;
-        let form_next_button = driver.find(By::ClassName("andes-pagination__button.andes-pagination__button--next")).await?;
-        let button = form_next_button.find(By::Css("a[class='andes-pagination__link']")).await?;
-        button.click().await?;
-
-        // mudar o uso do sleep no futuro !!! 
-        tokio::time::sleep(Duration::from_secs(2)).await;
     }
-    let mut file  = File::create("products.json").await?;
-    let json = serde_json::to_string_pretty(&vec_products)?;
-    file.write_all(json.as_bytes()).await?;
-
-    // Fechando o navegador
-    driver.quit().await?;
     Ok(())
 }
