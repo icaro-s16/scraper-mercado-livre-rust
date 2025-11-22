@@ -1,0 +1,14 @@
+[package]
+name = "WebScrapper"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+# O controlador do navegador (requer chromedriver rodando)
+thirtyfour = "0.36.1" 
+# O runtime assíncrono obrigatório
+tokio = { version = "1", features = ["full"] } 
+# json 
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
