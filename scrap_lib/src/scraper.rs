@@ -6,7 +6,7 @@ use crate::storage::file_product_json;
 use crate::models::Product;
 
 
-pub async fn scrap(product : &str) -> Result<Option<()>, Box<dyn Error + Send + Sync>>{
+pub async fn scrap(product : &str, num : u32) -> Result<Option<()>, Box<dyn Error + Send + Sync>>{
     // Manipulando o browser
     let caps = DesiredCapabilities::firefox();
     // local host do geckodriver
@@ -28,7 +28,7 @@ pub async fn scrap(product : &str) -> Result<Option<()>, Box<dyn Error + Send + 
     let elem_button = elem_form.find(By::Css("button[type='submit']")).await?;
     elem_button.click().await?;
     let mut vec_products : Vec<Product> = Vec::new();
-    loop{
+    for pages in 0 .. num{
         // verificando o carregamento do site
         driver.query(By::Css(".ui-search-layout")).first().await?;
         // encontrando o card dos produtos
@@ -38,7 +38,10 @@ pub async fn scrap(product : &str) -> Result<Option<()>, Box<dyn Error + Send + 
         match pagination(&driver).await{
             Ok(form) => {
                 match form{
-                    None => break,
+                    None => {
+                        println!("Scraping finished on page {} because there are no more pages to scrape.", pages+1);
+                        break;
+                    },
                     Some(_) => (),
                 };
             }

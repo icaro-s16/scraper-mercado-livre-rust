@@ -13,7 +13,7 @@ Este é um projeto de **Web Scraping** desenvolvido em **Rust** para extrair dad
 * **[Thirtyfour](https://crates.io/crates/thirtyfour)**: Biblioteca de automação de navegador (WebDriver) para Rust.
 * **[Tokio](https://tokio.rs/)**: Runtime assíncrono.
 * **[Serde](https://serde.rs/)**: Framework para serialização/deserialização de dados (JSON).
-* **[clearscreen](https://crates.io/crates/clearscreen)**: Utilit para apagar a tela do terminal quando o usuário acha nescessário
+* **[clearscreen](https://crates.io/crates/clearscreen)**: Utilit para apagar a tela do terminal quando o usuário achar nescessário
 
 ## ⚙️ Funcionalidades
 
@@ -38,7 +38,7 @@ Para rodar este projeto, você precisa ter instalado:
 
 1.  Clone este repositório:
     ```bash
-    git clone [https://github.com/icaro-s16/scraper-mercado-livre-rust.git](https://github.com/icaro-s16/scraper-mercado-livre-rust.git)
+    git clone https://github.com/icaro-s16/scraper-mercado-livre-rust
     cd scraper-mercado-livre-rust
     ```
 
@@ -53,9 +53,9 @@ Para rodar este projeto, você precisa ter instalado:
     cargo run
     ```
 4. Utilize a interface do usuário para inciar o scrap com o produto desejado
-  ```bash
-  scrap <product_name>
-  ```
+    ```bash
+    scrap <product_name>
+    ```
 
 4.  Aguarde o navegador abrir e realizar a tarefa. Ao final, verifique o arquivo `products.json` gerado na raiz.
 

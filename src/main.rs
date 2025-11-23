@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // interface básica
     loop{
         let mut command = String::new();
-        println!("Commands : scrap <product> | help | clear | exit");
+        println!("Commands : scrap <product> <number pages>| help | clear | exit");
         print!(">");
         io::stdout().flush().expect("erro");
         io::stdin()
@@ -16,10 +16,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .expect("erro");
         let command : Vec<&str> = command.split_whitespace().collect();
         match command.as_slice(){
-            [command_, product] => {
+            [command_, product,number] => {
                 match *command_{
                     "scrap" => {
-                        match scrap(&*product.trim().to_lowercase()).await{
+                        let number : u32 = match (*number).to_string().parse(){
+                            Ok(num) => num,
+                            Err(_) => {
+                                println!("Invalid number:  Type 'help' for available arguments.");
+                                continue;
+                            },
+                        };
+                        match scrap(&*product.trim().to_lowercase(), number).await{
                             Ok(state) => {
                                 match state {
                                     None => eprintln!("Error: Failed to initialize the driver."),  
@@ -41,9 +48,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                         println!("This program uses browser automation (GeckoDriver) to collect data.");
                         println!("---------------------------------------------------------------------");
                         println!("AVAILABLE COMMANDS:");
-                        println!("  scrap <product>  : Starts Firefox, searches for the product, collects");
-                        println!("                     Name and Price from all pages, and saves them");
-                        println!("                     to a local JSON file.");
+                        println!("  scrap <product> <number>: Starts Firefox, searches for the product, collects");
+                        println!("                            Name and Price from the specified number of pages, and saves them");
+                        println!("                            to a local JSON file.");
                         println!("  clear            : Clears the terminal screen.");
                         println!("  help             : Displays this help message.");
                         println!("  exit             : Exits the application.");
