@@ -5,6 +5,18 @@ use crate::extractor::fill_products_vec;
 use crate::storage::file_product_json;
 use crate::models::{Product, GenericInput};
 
+async fn scrap_main_loop(driver : &WebDriver, vec_products : &mut Vec<Product>)-> Result<Option<()>, Box<dyn Error + Send + Sync>>{
+    // verificando o carregamento do site
+    driver.query(By::Css(".ui-search-layout")).first().await?;
+    // encontrando o card dos produtos
+    let mut vec = fill_products_vec(&driver).await?;
+    vec_products.append(&mut vec);
+
+    match pagination(&driver).await{
+        Ok(result) => return Ok(result),
+        Err(erro) => return Err(erro),
+    }
+}
 
 
 pub async fn scrap(product : &str, num : &GenericInput<'_>) -> Result<Option<()>, Box<dyn Error + Send + Sync>>{
@@ -32,51 +44,34 @@ pub async fn scrap(product : &str, num : &GenericInput<'_>) -> Result<Option<()>
     match num{    
         GenericInput::Text(_text) => {
             loop{
-                // verificando o carregamento do site
-                driver.query(By::Css(".ui-search-layout")).first().await?;
-                // encontrando o card dos produtos
-                let mut vec = fill_products_vec(&driver).await?;
-                vec_products.append(&mut vec);
-
-                match pagination(&driver).await{
-                    Ok(form) => {
-                        match form{
-                            None => {
-                                break;
-                            },
-                            Some(_) => (),
-                        };
-                    }
+                match scrap_main_loop(&driver, &mut vec_products).await{
+                    Ok(option) => {
+                        if option == None{
+                            break;
+                        }
+                    },
                     Err(erro) => {
                         eprintln!("Error: Failed to complete scraping operation. Reason: {}", erro.to_string());
                         return Err(erro);
-                    },
-                };
-            }
-        }
+                    }
+                }
+               
+            };
+        },
         GenericInput::Number(num) =>{ 
             for pages in 0 .. *num{
-                // verificando o carregamento do site
-                driver.query(By::Css(".ui-search-layout")).first().await?;
-                // encontrando o card dos produtos
-                let mut vec = fill_products_vec(&driver).await?;
-                vec_products.append(&mut vec);
-
-                match pagination(&driver).await{
-                    Ok(form) => {
-                        match form{
-                            None => {
-                                println!("Scraping finished on page {} because there are no more pages to scrape.", pages+1);
-                                break;
-                            },
-                            Some(_) => (),
-                        };
-                    }
+                match scrap_main_loop(&driver, &mut vec_products).await{
+                    Ok(option) => {
+                        if option == None{
+                            println!("Scraping finished on page {} because there are no more pages to scrape.", pages+1);
+                            break;
+                        }
+                    },
                     Err(erro) => {
                         eprintln!("Error: Failed to complete scraping operation. Reason: {}", erro.to_string());
                         return Err(erro);
                     },
-                };
+                }
             }
         }
         _ => (),
