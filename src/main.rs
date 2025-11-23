@@ -1,14 +1,14 @@
 use std::{error::Error, io::{self, Write}};
 use tokio;
 use clearscreen::clear;
-use scrap_lib::scraper::scrap;
+use scrap_lib::{scraper::scrap, models::GenericInput};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // interface básica
     loop{
         let mut command = String::new();
-        println!("Commands : scrap <product> <number pages>| help | clear | exit");
+        println!("Commands : scrap <product> <number pages | all>| help | clear | exit");
         print!(">");
         io::stdout().flush().expect("erro");
         io::stdin()
@@ -19,14 +19,21 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             [command_, product,number] => {
                 match *command_{
                     "scrap" => {
-                        let number : u32 = match (*number).to_string().parse(){
-                            Ok(num) => num,
-                            Err(_) => {
-                                println!("Invalid number:  Type 'help' for available arguments.");
-                                continue;
-                            },
+                        let mut _input = GenericInput::new();
+                        match *number{
+                            "all" => _input = GenericInput::Text("all"),
+                            _ => {
+                                let number : u32 = match (*number).to_string().parse(){
+                                    Ok(num) => num,
+                                    Err(_) => {
+                                        println!("Invalid number:  Type 'help' for available arguments.");
+                                        continue;
+                                    },
+                                };
+                                _input = GenericInput::Number(number);
+                            }
                         };
-                        match scrap(&*product.trim().to_lowercase(), number).await{
+                        match scrap(&*product.trim().to_lowercase(), &_input).await{
                             Ok(state) => {
                                 match state {
                                     None => eprintln!("Error: Failed to initialize the driver."),  

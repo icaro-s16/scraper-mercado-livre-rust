@@ -15,3 +15,15 @@ impl Product{
         }
     }
 }
+
+pub enum GenericInput<'a>{
+    Text(&'a str),
+    Number(u32),
+    Default,
+}
+
+impl GenericInput<'_>{
+    pub fn new()-> Self{
+        GenericInput::Default
+    }
+}

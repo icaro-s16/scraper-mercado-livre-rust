@@ -3,10 +3,11 @@ use thirtyfour::prelude::*;
 use crate::pagination::pagination;
 use crate::extractor::fill_products_vec;
 use crate::storage::file_product_json;
-use crate::models::Product;
+use crate::models::{Product, GenericInput};
 
 
-pub async fn scrap(product : &str, num : u32) -> Result<Option<()>, Box<dyn Error + Send + Sync>>{
+
+pub async fn scrap(product : &str, num : &GenericInput<'_>) -> Result<Option<()>, Box<dyn Error + Send + Sync>>{
     // Manipulando o browser
     let caps = DesiredCapabilities::firefox();
     // local host do geckodriver
@@ -28,28 +29,57 @@ pub async fn scrap(product : &str, num : u32) -> Result<Option<()>, Box<dyn Erro
     let elem_button = elem_form.find(By::Css("button[type='submit']")).await?;
     elem_button.click().await?;
     let mut vec_products : Vec<Product> = Vec::new();
-    for pages in 0 .. num{
-        // verificando o carregamento do site
-        driver.query(By::Css(".ui-search-layout")).first().await?;
-        // encontrando o card dos produtos
-        let mut vec = fill_products_vec(&driver).await?;
-        vec_products.append(&mut vec);
+    match num{    
+        GenericInput::Text(_text) => {
+            loop{
+                // verificando o carregamento do site
+                driver.query(By::Css(".ui-search-layout")).first().await?;
+                // encontrando o card dos produtos
+                let mut vec = fill_products_vec(&driver).await?;
+                vec_products.append(&mut vec);
 
-        match pagination(&driver).await{
-            Ok(form) => {
-                match form{
-                    None => {
-                        println!("Scraping finished on page {} because there are no more pages to scrape.", pages+1);
-                        break;
+                match pagination(&driver).await{
+                    Ok(form) => {
+                        match form{
+                            None => {
+                                break;
+                            },
+                            Some(_) => (),
+                        };
+                    }
+                    Err(erro) => {
+                        eprintln!("Error: Failed to complete scraping operation. Reason: {}", erro.to_string());
+                        return Err(erro);
                     },
-                    Some(_) => (),
                 };
             }
-            Err(erro) => {
-                eprintln!("Error: Failed to complete scraping operation. Reason: {}", erro.to_string());
-                return Err(erro);
-            },
-        };
+        }
+        GenericInput::Number(num) =>{ 
+            for pages in 0 .. *num{
+                // verificando o carregamento do site
+                driver.query(By::Css(".ui-search-layout")).first().await?;
+                // encontrando o card dos produtos
+                let mut vec = fill_products_vec(&driver).await?;
+                vec_products.append(&mut vec);
+
+                match pagination(&driver).await{
+                    Ok(form) => {
+                        match form{
+                            None => {
+                                println!("Scraping finished on page {} because there are no more pages to scrape.", pages+1);
+                                break;
+                            },
+                            Some(_) => (),
+                        };
+                    }
+                    Err(erro) => {
+                        eprintln!("Error: Failed to complete scraping operation. Reason: {}", erro.to_string());
+                        return Err(erro);
+                    },
+                };
+            }
+        }
+        _ => (),
     }
     match file_product_json(&vec_products, product).await{
         Err(erro) => {
