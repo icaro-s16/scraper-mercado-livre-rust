@@ -1,6 +1,6 @@
 [package]
 name = "WebScrapper"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 
 
@@ -9,7 +9,7 @@ edition = "2024"
 clearscreen = "4.0.2"
 #scrap 
 scrap_lib = {path = "scrap_lib"}
-# O controlador do navegador (requer chromedriver rodando)
+# O controlador do navegador 
 thirtyfour = "0.36.1" 
 # O runtime assíncrono obrigatório
 tokio = { version = "1", features = ["full"] } 

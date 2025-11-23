@@ -1,7 +1,7 @@
 use std::{error::Error, io::{self, Write}};
 use tokio;
 use clearscreen::clear;
-use scrap_lib::scrap::{ScrapComplete, scrap};
+use scrap_lib::scraper::scrap;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -22,8 +22,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                         match scrap(&*product.trim().to_lowercase()).await{
                             Ok(state) => {
                                 match state {
-                                    ScrapComplete::DriveErro => eprintln!("Error: Failed to initialize the driver."),  
-                                    ScrapComplete::ScrapComplete => println!("The scrap was successfully completed."),   
+                                    None => eprintln!("Error: Failed to initialize the driver."),  
+                                    Some(_) => println!("The scrap was successfully completed."),   
                                 };
                             },
                             Err(erro) => {
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                     "exit" => {
                         break;
                     }
-                    _ => println!("")
+                    _ => println!("Unknown command: '{}'. Type 'help' for available commands.", *command_),
                 }
             },
             _ =>  println!("Unknown command: Type 'help' for available commands."),
