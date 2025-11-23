@@ -12,9 +12,11 @@ pub async fn pagination(driver : &WebDriver)->Result<Option<()>, Box<dyn Error +
     tokio::time::sleep(Duration::from_secs(1)).await;
     let form_next_button = driver.find(By::ClassName("andes-pagination__button.andes-pagination__button--next")).await?;
     let button = form_next_button.find(By::Css("a[class='andes-pagination__link']")).await?;
+    let product_card_atual = driver.find(By::ClassName("poly-card__content")).await?;
+    
     button.click().await?;
 
-    // mudar o uso do sleep no futuro !!! 
-    tokio::time::sleep(Duration::from_secs(3)).await;
+    // espera até que o primeiro produto da página anterior estiver "morrido"
+    product_card_atual.wait_until().stale().await?;
     Ok(Some(()))
 }

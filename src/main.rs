@@ -8,7 +8,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // interface básica
     loop{
         let mut command = String::new();
-        println!("Commands : scrap <product> <number pages | all>| help | clear | exit");
+        println!("Commands : scrap <product> <(number pages) or (all)> | help | clear | exit");
         print!(">");
         io::stdout().flush().expect("erro");
         io::stdin()
